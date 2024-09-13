@@ -1,0 +1,191 @@
+Vou explicar o que cada parte do código faz, passo a passo, para que você possa entender melhor o que está acontecendo.
+
+Importações
+
+from __future__ import division, print_function
+import numpy as np
+import math
+from sklearn import datasets
+import matplotlib.pyplot as plt
+import pandas as pd
+
+# Import helper functions
+from mlfromscratch.utils import train_test_split, accuracy_score, Plot
+
+Importações: Estas linhas trazem as bibliotecas que você vai usar.
+
+numpy para trabalhar com arrays e funções matemáticas.
+
+math para funções matemáticas adicionais.
+
+sklearn.datasets para carregar conjuntos de dados.
+
+matplotlib.pyplot para criar gráficos.
+
+pandas para manipulação de dados tabulares.
+
+Funções auxiliares como train_test_split para dividir dados e accuracy_score para calcular a precisão do modelo.
+
+
+
+Classe DecisionStump
+
+class DecisionStump():
+    def __init__(self):
+        self.polarity = 1
+        self.feature_index = None
+        self.threshold = None
+        self.alpha = None
+
+DecisionStump: Define um "stump" de decisão, que é uma árvore de decisão simples com apenas um nó. Ele toma decisões baseadas em:
+
+polarity: Determina se a classificação será positiva ou negativa.
+
+feature_index: Índice do recurso (coluna) usado para fazer a classificação.
+
+threshold: O valor que será usado como limite para tomar a decisão (se o valor do recurso é maior ou menor que esse limite).
+
+alpha: O peso do classificador, indicando sua importância (quanto menor o erro, maior o peso).
+
+
+
+Classe Adaboost
+
+class Adaboost():
+    def __init__(self, n_clf=5):
+        self.n_clf = n_clf
+
+Adaboost: Implementa o algoritmo de boosting AdaBoost, que combina vários classificadores fracos para criar um modelo forte. O parâmetro n_clf determina quantos classificadores fracos (stumps) serão usados.
+
+
+Método fit
+
+def fit(self, X, y):
+    n_samples, n_features = np.shape(X)
+    w = np.full(n_samples, (1 / n_samples))
+    
+    self.clfs = []
+    for _ in range(self.n_clf):
+        clf = DecisionStump()
+        min_error = float('inf')
+        for feature_i in range(n_features):
+            feature_values = np.expand_dims(X[:, feature_i], axis=1)
+            unique_values = np.unique(feature_values)
+            for threshold in unique_values:
+                p = 1
+                prediction = np.ones(np.shape(y))
+                prediction[X[:, feature_i] < threshold] = -1
+                error = sum(w[y != prediction])
+                
+                if error > 0.5:
+                    error = 1 - error
+                    p = -1
+
+                if error < min_error:
+                    clf.polarity = p
+                    clf.threshold = threshold
+                    clf.feature_index = feature_i
+                    min_error = error
+
+        clf.alpha = 0.5 * math.log((1.0 - min_error) / (min_error + 1e-10))
+        predictions = np.ones(np.shape(y))
+        negative_idx = (clf.polarity * X[:, clf.feature_index] < clf.polarity * clf.threshold)
+        predictions[negative_idx] = -1
+        w *= np.exp(-clf.alpha * y * predictions)
+        w /= np.sum(w)
+
+        self.clfs.append(clf)
+
+fit: Este método treina o modelo AdaBoost. Ele toma como entrada os dados (X) e os rótulos (y), e faz o seguinte:
+
+1. Inicializa pesos: Cada amostra tem um peso inicial igual.
+
+
+2. Treina vários stumps: Para cada stump, ele encontra a melhor característica (feature) e o melhor limite (threshold) para dividir os dados.
+
+
+3. Calcula erro: O erro é a soma dos pesos das amostras que foram classificadas incorretamente.
+
+
+4. Atualiza pesos: Amostras classificadas incorretamente recebem mais peso para que o próximo stump se concentre mais nelas.
+
+
+5. Salva o classificador: Cada stump treinado é salvo para ser usado na fase de previsão.
+
+
+
+
+Método predict
+
+def predict(self, X):
+    n_samples = np.shape(X)[0]
+    y_pred = np.zeros((n_samples, 1))
+    for clf in self.clfs:
+        predictions = np.ones(np.shape(y_pred))
+        negative_idx = (clf.polarity * X[:, clf.feature_index] < clf.polarity * clf.threshold)
+        predictions[negative_idx] = -1
+        y_pred += clf.alpha * predictions
+
+    y_pred = np.sign(y_pred).flatten()
+    return y_pred
+
+predict: Este método faz a previsão usando os stumps que foram treinados. Cada stump faz uma previsão, e as previsões são combinadas usando os pesos (alpha) de cada stump. O sinal final (+1 ou -1) é o rótulo previsto.
+
+
+Função main
+
+def main():
+    data = datasets.load_digits()
+    X = data.data
+    y = data.target
+
+    digit1 = 1
+    digit2 = 8
+    idx = np.append(np.where(y == digit1)[0], np.where(y == digit2)[0])
+    y = data.target[idx]
+    y[y == digit1] = -1
+    y[y == digit2] = 1
+    X = data.data[idx]
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5)
+
+    clf = Adaboost(n_clf=5)
+    clf.fit(X_train, y_train)
+    y_pred = clf.predict(X_test)
+
+    accuracy = accuracy_score(y_test, y_pred)
+    print("Accuracy:", accuracy)
+
+    Plot().plot_in_2d(X_test, y_pred, title="Adaboost", accuracy=accuracy)
+
+main: Esta função principal faz o seguinte:
+
+1. Carrega o conjunto de dados digits do scikit-learn, contendo imagens de dígitos escritos à mão.
+
+
+2. Seleciona apenas as amostras correspondentes aos dígitos 1 e 8.
+
+
+3. Divide os dados em um conjunto de treino e teste.
+
+
+4. Treina o modelo AdaBoost com 5 stumps de decisão.
+
+
+5. Avalia a precisão do modelo no conjunto de teste.
+
+
+6. Plota os resultados em um gráfico 2D.
+
+
+
+
+Resumo:
+
+Stumps são árvores de decisão muito simples usadas como classificadores fracos.
+
+O AdaBoost usa vários stumps para criar um modelo forte, ajustando os pesos das amostras a cada iteração.
+
+A função main carrega os dados, treina o modelo e avalia sua precisão.
+
+
