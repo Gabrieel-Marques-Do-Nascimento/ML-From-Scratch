@@ -1,10 +1,10 @@
 # Machine Learning From Scratch
 
 ## About
-Python implementations of some of the fundamental Machine Learning models and algorithms from scratch.
+Implementações Python de alguns dos modelos e algoritmos fundamentais de Machine Learning do zero.
 
-The purpose of this project is not to produce as optimized and computationally efficient algorithms as possible
-but rather to present the inner workings of them in a transparent and accessible way.
+O propósito deste projeto não é produzir algoritmos tão otimizados e computacionalmente eficientes quanto possível
+mas sim apresentar o funcionamento interno deles de forma transparente e acessível.
 
 ## Table of Contents
 - [Machine Learning From Scratch](#machine-learning-from-scratch)
@@ -219,13 +219,13 @@ but rather to present the inner workings of them in a transparent and accessible
     +--------+
     |   GA   |
     +--------+
-    Description: Implementation of a Genetic Algorithm which aims to produce
-    the user specified target string. This implementation calculates each
-    candidate's fitness based on the alphabetical distance between the candidate
-    and the target. A candidate is selected as a parent with probabilities proportional
-    to the candidate's fitness. Reproduction is implemented as a single-point
-    crossover between pairs of parents. Mutation is done by randomly assigning
-    new characters with uniform probability.
+ descrição: Implementação de um Algoritmo Genético que visa produzir
+a sequência de caracteres alvo especificada pelo usuário. Esta implementação calcula cada
+aptidão do candidato com base na distância alfabética entre o candidato
+e o alvo. Um candidato é selecionado como pai com probabilidades proporcionais
+à aptidão do candidato. A reprodução é implementada como um cruzamento de
+ponto único entre pares de pais. A mutação é feita atribuindo aleatoriamente
+novos caracteres com probabilidade uniforme.
 
     Parameters
     ----------
