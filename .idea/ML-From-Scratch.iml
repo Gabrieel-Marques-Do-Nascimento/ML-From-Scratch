@@ -2,9 +2,11 @@
 <module type="PYTHON_MODULE" version="4">
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/.eggs/numpy-2.1.1-py3.11-win-amd64.egg" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/.eggs/scipy-1.14.1-py3.11-win-amd64.egg" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/.venv" />
     </content>
-    <orderEntry type="jdk" jdkName="Python 3.11 (ML-From-Scratch)" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="ML-From-Scratch" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
   <component name="PyDocumentationSettings">

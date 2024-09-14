@@ -1,19 +1,28 @@
 from __future__ import division, print_function
+# arrays e funcoes matemáticas
 import numpy as np
+# funções matemáticas extras
 import math
+# carregar o conjunto de dados
 from sklearn import datasets
+# criar graficos
 import matplotlib.pyplot as plt
+# manipular dados tabulares
 import pandas as pd
 
 # Import helper functions
+#                               dividir dados , calcular a precisão,
 from mlfromscratch.utils import train_test_split, accuracy_score, Plot
 
 # Decision stump used as weak classifier in this impl. of Adaboost
+# 'stump'  arvore de decision 
 class DecisionStump():
     def __init__(self):
         # Determines if sample shall be classified as -1 or 1 given threshold
+        # determina se a classificação sera positiva o8 negativa 
         self.polarity = 1
         # The index of the feature used to make classification
+        # O índice do recurso usado para fazer classificação
         self.feature_index = None
         # The threshold value that the feature should be measured against
         self.threshold = None

@@ -6,7 +6,15 @@ import sys
 
 
 def shuffle_data(X, y, seed=None):
-    """ Random shuffle of the samples in X and y """
+    """ Random shuffle of the samples in X and y \n
+    O código da função shuffle_data realiza o embaralhamento aleatório 
+    dos dados de entrada X e y, que geralmente são os recursos e rótulos 
+    em um contexto de machine learning.
+
+    x (_type_): Matriz de caracteristicas (features), onde cada 
+    linha e uma amostra
+
+    """
     if seed:
         np.random.seed(seed)
     idx = np.arange(X.shape[0])
@@ -15,7 +23,9 @@ def shuffle_data(X, y, seed=None):
 
 
 def batch_iterator(X, y=None, batch_size=64):
-    """ Simple batch generator """
+    """ Simple batch generator \n
+    Gerador de lote simples
+    """
     n_samples = X.shape[0]
     for i in np.arange(0, n_samples, batch_size):
         begin, end = i, min(i+batch_size, n_samples)
@@ -27,7 +37,10 @@ def batch_iterator(X, y=None, batch_size=64):
 
 def divide_on_feature(X, feature_i, threshold):
     """ Divide dataset based on if sample value on feature index is larger than
-        the given threshold """
+        the given threshold \n
+        Divida o conjunto de dados com base no valor da amostra no índice de 
+        recursos é maior que
+        o limiar dado"""
     split_func = None
     if isinstance(threshold, int) or isinstance(threshold, float):
         split_func = lambda sample: sample[feature_i] >= threshold
@@ -41,6 +54,7 @@ def divide_on_feature(X, feature_i, threshold):
 
 
 def polynomial_features(X, degree):
+    
     n_samples, n_features = np.shape(X)
 
     def index_combinations():
@@ -62,11 +76,13 @@ def get_random_subsets(X, y, n_subsets, replacements=True):
     """ Return random subsets (with replacements) of the data """
     n_samples = np.shape(X)[0]
     # Concatenate x and y and do a random shuffle
+    # concatenar x e y e fazer um shuffle aleatório
     X_y = np.concatenate((X, y.reshape((1, len(y))).T), axis=1)
     np.random.shuffle(X_y)
     subsets = []
 
     # Uses 50% of training samples without replacements
+    # Usa 50% das amostras de treinamento sem substituições
     subsample_size = int(n_samples // 2)
     if replacements:
         subsample_size = n_samples      # 100% with replacements
