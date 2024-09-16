@@ -9,6 +9,9 @@
     <orderEntry type="jdk" jdkName="ML-From-Scratch" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
+  <component name="PackageRequirementsSettings">
+    <option name="requirementsPath" value="C:\Users\GABRI\OneDrive\Área de Trabalho\__PROJETOS\ML-From-Scratch\machine_learning_from_Scratch\requirements.txt" />
+  </component>
   <component name="PyDocumentationSettings">
     <option name="format" value="GOOGLE" />
     <option name="myDocStringFormat" value="Google" />
