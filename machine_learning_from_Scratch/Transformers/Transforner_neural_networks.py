@@ -1,18 +1,100 @@
 """
-na imagem do lado esquerdo temos o encoder, e o decoder no lado direito
+na imagem, do lado esquerdo temos o `encoder`, e o decoder no lado `direito`.
+
+.. ENCODER::
+`codificador`: de baixo temos entradas digamos que algum texto fonte para tradução, vamos criar alguns `embeddings`, que sao enviados para o bloco, o bloco e enviado para um `mult-head-attention` que e um bloco menor dentro do bloco transformador, o nucleo essencial do transformador ,sera enviado para o `mult-head-attention` 3 entradas diferentes, chamados `chaves` e `consultas`, por diante paca por um normalizador depois por `Feed-forwaed`, e vai para outro `normalizador` as setas na imagem sao conexoes entre as partes do bloco.
+
+.. DECODER::
+`decodificador` a saida do `ENCODER` e enviado como entrada (valores,mm
+chaves e consultas) para o `mult-head-attention`
+vamos chamalo de bloco decodificador, mm
+
+.. description::
+o `attention` vai dividir a entrada pelo numero de cabeças(`heads`)
+
+`exemp`:  256 / 8 == 32 dimensões
+que serão enviados em 3 através de camadas lineares, sera enviado a entrada
+dividida a Saida vai para o produto escalar
+
+
+.. CODIFICANDO::
+vamos começar pela parte mais complicada que e `auto atenção`
 """
+
 import torch
-import torch.nn as nn
+from torch import nn
 
 
-class SelfAttention(nn.Module):
+class Module(nn.Module):
+    """
+`docstring traduzida`: `nn.Module`
+
+    Classe base para todos os módulos de rede neural.
+Seus modelos também devem subclassificar esta classe.
+
+Módulos também podem conter outros Módulos, permitindo aninhá-los em uma 
+estrutura de árvore. Você pode atribuir os submódulos como atributos regulares:
+
+ import torch.nn as nn\n
+    import torch.nn.functional as F
+
+    class Model(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.conv1 = nn.Conv2d(1, 20, 5)
+            self.conv2 = nn.Conv2d(20, 20, 5)
+
+        def forward(self, x):
+            x = F.relu(self.conv1(x))
+            return F.relu(self.conv2(x))
+
+
+Submódulos atribuídos dessa forma serão registrados e terão seus parâmetros 
+convertidos também quando você chamar, etc.
+
+nota Conforme o exemplo acima, uma chamada __init__() para a classe pai deve 
+ser feita antes da atribuição na filha.
+
+ivar training : Boolean representa se este módulo está em modo de treinamento 
+ou avaliação.
+vartype training : bool
+    """
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+
+class SelfAttention(Module):
+    """
+`Inicializa o estado interno do módulo, compartilhado por nn.Module e 
+ScriptModule.`
+
+    Args:
+        Module (_type_): _description_
+    
+
+Descrição detalhada (opcional):
+Esta classe faz explicação do que a classe faz.
+
+Attributes:
+    embed_size (int): tamanho da incorporação, dimensão da encorporação.
+    heads (int): quantidade de partes que a incorporação sera dividida.
+    head_dim (int): tamanho de cada parte da incorporação, dimensão de cada parte
+    """
     def __init__(self, embed_size, heads):
+        """_requer o tamanho da incorporação `embed_size` e também as cabeças `heads` que representa a quantidade de partes que a incorporação sera dividida
+  
+        Args:
+            embed_size (int): tamanho da incorporação
+            heads (int): quantidade de partes que a incorporação sera dividida
+        """
         super(SelfAttention, self).__init__()
         self.embed_size = embed_size
         self.heads = heads
         self.head_dim = embed_size // heads
 
-        assert (self.head_dim * heads == embed_size), 'Embed size neds  to be div by heats'
+        assert (self.head_dim * heads ==
+                embed_size), "Embed size neds  to be div by heats"
 
         self.values = nn.Linear(self.head_dim, self.head_dim, bias=False)
         self.keys = nn.Linear(self.head_dim, self.head_dim, bias=False)
@@ -42,26 +124,24 @@ class SelfAttention(nn.Module):
 
         #                                     embed_size =256 / 0.5
         attention = torch.softmax(energy / (self.embed_size ** (1 / 2)), dim=3)
-        print(attention.shape)
-        print(values.shape)
+        # print(attention.shape)
+        # print(values.shape)
 
-        out = torch.einsum("nqhd,nkhd->nhqk", [attention, values]).reshape(
+        out = torch.einsum("nhql,nlhd->nqhd", [attention, values]).reshape(
             N, query_len, self.heads * self.head_dim
         )
 
         # attention shape: (N, heads, query_len, key_len)
         # values shape: (N, value_len, heads, heads_dim)
-        # after shape: (N, value_len, heads, heads_dim) then flatten last two di
+    # after shape: (N, value_len, heads, heads_dim) then flatten last two di
         out = self.fc_out(out)
         return out
 
 
-class TransFormerBlock(nn.Module):
-    """
-
-    """
+class TransFormerBlock(Module):
 
     def __init__(self, embed_size, heads, dropout, forward_expansion):
+        
         super(TransFormerBlock, self).__init__()
         self.attention = SelfAttention(embed_size, heads)
         self.norm1 = nn.LayerNorm(embed_size)
@@ -83,7 +163,7 @@ class TransFormerBlock(nn.Module):
         return out
 
 
-class Encoder(nn.Module):
+class Encoder(Module):
     def __init__(
             self,
             src_vocab_size,
@@ -98,7 +178,6 @@ class Encoder(nn.Module):
         super(Encoder, self).__init__()
         self.embed_size = embed_size
         self.device = device
-        self.dropout = nn.Dropout(dropout)
 
         self.word_embedding = nn.Embedding(src_vocab_size, embed_size)
         self.position_embendding = nn.Embedding(max_langth, embed_size)
@@ -113,20 +192,23 @@ class Encoder(nn.Module):
                 )
                 for _ in range(num_layers)]  # 6 vezes
         )
+        self.dropout = nn.Dropout(dropout)
 
     def forward(self, x, mask):
         N, seq_length = x.shape
-        positions = torch.arange(0, seq_length).expand(N, seq_length).to(self.device)
+        positions = torch.arange(0, seq_length).expand(
+            N, seq_length).to(self.device)
 
-        out = self.dropout(self.word_embedding(x) + self.position_embendding(positions))
+        out = self.dropout(self.word_embedding(
+            x) + self.position_embendding(positions))
 
         for layer in self.layers:
-            out = layer(out, out,out, mask)
+            out = layer(out, out, out, mask)
 
         return out
 
 
-class DecoderBlock(nn.Module):
+class DecoderBlock(Module):
     def __init__(self, embed_size, heads, forward_expansion, dropout, device):
         super(DecoderBlock, self).__init__()
         self.attention = SelfAttention(embed_size, heads)
@@ -143,7 +225,7 @@ class DecoderBlock(nn.Module):
         return out
 
 
-class Decoder(nn.Module):
+class Decoder(Module):
     def __init__(self,
                  trg_vocab_size,
                  embed_size,
@@ -160,15 +242,20 @@ class Decoder(nn.Module):
         self.position_embedding = nn.Embedding(max_length, embed_size)
 
         self.layers = nn.ModuleList(
-            [DecoderBlock(embed_size, heads, forward_expansion, dropout, device)
-             for _ in range(num_layers)]
+            [DecoderBlock(
+                embed_size, heads, forward_expansion, dropout, device
+            )
+                for _ in range(num_layers)]
         )
         self.fc_out = nn.Linear(embed_size, trg_vocab_size)
+        self.dropout = nn.Dropout(dropout)
 
     def forward(self, x, enc_out, src_mask, trg_mask):
         N, seq_length = x.shape
-        positions = torch.arange(0, seq_length).expand(N, seq_length).to(self.device)
-        x = self.dropout((self.word_embedding(x) + self.position_embedding(positions)))
+        positions = torch.arange(0, seq_length).expand(
+            N, seq_length).to(self.device)
+        x = self.dropout((self.word_embedding(
+            x) + self.position_embedding(positions)))
 
         for layer in self.layers:
             x = layer(x, enc_out, enc_out, src_mask, trg_mask)
@@ -177,13 +264,15 @@ class Decoder(nn.Module):
         return out
 
 
-class Transformer(nn.Module):
+class Transformer(Module):
     def __init__(self,
                  src_vocab_size,
                  trg_vocab_size,
                  src_pad_idx,
                  trg_pad_idx,
                  embed_size=256,
+                 # embed_size (int, optional): representa o tamanho da entrada do user.
+                 # Defaults to 256.
                  num_layers=6,
                  forward_expansion=4,
                  heads=8,
@@ -238,18 +327,21 @@ class Transformer(nn.Module):
 
 if __name__ == "__main__":  # ("cuda" if torch.cuda.is_available() else "cpu")
     device = torch.device("cpu")
-    x = torch.tensor([[1, 5, 6, 4, 3, 9, 5, 2, 0], [1, 8, 7, 3, 4, 5, 6, 7, 2]]).to(
+    x = torch.tensor(
+        [[1, 5, 6, 4, 3, 9, 5, 2, 0], [1, 8, 7, 3, 4, 5, 6, 7, 2]]).to(
         device
 
     )
-    trg = torch.tensor([[1, 7, 4, 3, 5, 9, 2, 0, ], [1, 5, 6, 2, 4, 7, 6, 2, ]]).to(device)
+    trg = torch.tensor([[1, 7, 4, 3, 5, 9, 2, 0], [
+        1, 5, 6, 2, 4, 7, 6, 2]]).to(device)
 
     src_pad_idx = 0
     trg_pad_idx = 0
     src_vocab_size = 10
     trg_vocab_size = 10
 
-    modal = Transformer(src_vocab_size, trg_vocab_size, src_pad_idx, trg_pad_idx).to(
+    modal = Transformer(
+        src_vocab_size, trg_vocab_size, src_pad_idx, trg_pad_idx).to(
         device
     )
     out = modal(x, trg[:, :-1])

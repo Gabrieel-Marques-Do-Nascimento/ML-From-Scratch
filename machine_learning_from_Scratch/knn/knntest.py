@@ -33,7 +33,7 @@ print(mos_common)
 print(mos_common[0][0])
 #pegando os indices
 """
-from knn import KNN
+from machine_learning_from_Scratch.knn.knn import KNN
 
 # classificador
 clf = KNN(k=5)

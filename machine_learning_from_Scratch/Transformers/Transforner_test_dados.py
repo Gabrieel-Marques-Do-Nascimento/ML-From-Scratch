@@ -1,3 +1,4 @@
+import Transforner_neural_networks  # noqa: F401
 import numpy as np
 
 
@@ -6,13 +7,14 @@ def load_vectors(filename):
         word_vectors = {}
         for i, line in enumerate(f):
             if i == 0:
-                # A primeira linha geralmente contém metadados, como o número de palavras e a dimensão dos vetores
+# A primeira linha geralmente contém metadados, como o número de palavras e a dimensão dos vetores
                 continue
             parts = line.rstrip().split(' ')
             word = parts[0]
             vector = np.array([float(v) for v in parts[1:]], dtype=np.float32)
             word_vectors[word] = vector
     return word_vectors
+
 
 
 pt = 'C:/Users/GABRI/OneDrive/Área de Trabalho/__PROJETOS/ML-From-Scratch/dados/cc.pt.300.vec/cc.pt.300.vec'
@@ -26,7 +28,7 @@ if __name__ == '__main__':
 
     # Carregar embeddings em português
     embeddings_pt = load_vectors(
-        'C:/Users/GABRI/OneDrive/Área de Trabalho/__PROJETOS/ML-From-Scratch/dados/cc.pt.300.vec/cc.pt.300.vec')
+        '/dados/cc.pt.300.vec/cc.pt.300.vec')
 
     # Verificando os primeiros vetores carregados
     print(list(embeddings_pt.items())[:5])  # Mostra as 5 primeiras palavras em inglês e seus vetores
@@ -67,3 +69,15 @@ if __name__ == '__main__':
 #
 # # Verificar os primeiros vetores
 # print(list(embeddings_en_bin.items())[:5])
+
+
+
+
+
+
+
+
+
+
+
+
