@@ -1,33 +1,9 @@
 """
-na imagem, do lado esquerdo temos o `encoder`, e o decoder no lado `direito`.
 
-.. ENCODER::
-`codificador`: de baixo temos entradas digamos que algum texto fonte para
-tradução, vamos criar alguns `embeddings`, que sao enviados para o bloco, o
-bloco e enviado para um `mult-head-attention` que e um bloco menor dentro do
-bloco transformador, o nucleo essencial do transformador ,sera enviado para o
-`mult-head-attention` 3 entradas diferentes, chamados `chaves` e `consultas`,
-por diante paca por um normalizador depois por `Feed-forwaed`, e vai para 
-outro `normalizador` as setas na imagem sao conexoes entre as partes do bloco.
-
-.. DECODER::
-`decodificador` a saida do `ENCODER` e enviado como entrada (valores,mm
-chaves e consultas) para o `mult-head-attention`
-vamos chamalo de bloco decodificador, mm
-
-.. description::
-o `attention` vai dividir a entrada pelo numero de cabeças(`heads`)
-
-`exemp`:  256 / 8 == 32 dimensões
-que serão enviados em 3 através de camadas lineares, sera enviado a entrada
-dividida a Saida vai para o produto escalar
-
-
-.. CODIFICANDO::
-vamos começar pela parte mais complicada que e `auto atenção`
 """
-
+# torch e usado para calculos e de aprendizado de maquina profundo
 import torch
+# nn e usado para camadas de rede neurais'
 from torch import nn
 
 
@@ -72,26 +48,24 @@ vartype training : bool
 
 class SelfAttention(Module):
     """
-`Inicializa o estado interno do módulo, compartilhado por nn.Module e 
-ScriptModule.`
+implementa o mecanismo de `atenção`, onde entradas sao processadas com valores,
+chaves e consultas para calcular pesos de `atenção`
 
     Args:
-        Module (_type_): _description_
-
-
-Descrição detalhada (opcional):
-Esta classe faz explicação do que a classe faz.
+        Module (_type_): `Inicializa o estado interno do módulo, compartilhado
+        por nn.Module e ScriptModule.`
 
 Attributes:
-    embed_size (int): tamanho da incorporação, dimensão da encorporação.
-    heads (int): quantidade de partes que a incorporação sera dividida.
-    head_dim (int): tamanho de cada parte da incorporação, dimensão de cada
-    parte
+   embed_size (int): tamanho da incorporação, dimensão da encorporação.
+   heads (int): quantidade de partes que a incorporação sera dividida.
+   head_dim (int): divide o embedding em múltiplas partes (heads) para
+   facilitar o processamento paralelo.
+
     """
 
     def __init__(self, embed_size, heads):
         """
-requer o tamanho da incorporação `embed_size` e também as cabeças 
+requer o tamanho da incorporação `embed_size` e também as cabeças
 `heads` que representa a quantidade de partes que a incorporação sera dividida
 
         Args:
@@ -101,30 +75,35 @@ requer o tamanho da incorporação `embed_size` e também as cabeças
         super(SelfAttention, self).__init__()
         self.embed_size = embed_size
         self.heads = heads
+        # >>> divide o embedding em múltiplas partes (heads) para
+        # >>> facilitar o processamento paralelo.
         self.head_dim = embed_size // heads
-        # afirmar 
+
         assert (self.head_dim * heads ==
                 embed_size), "Embed size neds  to be div by heats"
-        # O tamanho do embed precisa ser dividido pelos heats 
-       # pega a dimencao do head vsi mapealo para a dimencao  head  bias como false
+
+        # `Camadas lineares`: sao aplicadas para calcular as chaves,
+        #  valores e consultas
+
         self.values = nn.Linear(self.head_dim, self.head_dim, bias=False)
+        """
+        `nn.Linear`: multiplicação de uma matriz pelos dados de entrada,
+        seguida por uma soma de um vetor de viés (bias),
+         a menos que você opte por desativá-lo
+         
+         explicação completa em `linearTutor.py`
+         """
         self.keys = nn.Linear(self.head_dim, self.head_dim, bias=False)
         self.queries = nn.Linear(self.head_dim, self.head_dim, bias=False)
-        # heads * head_dim tem que ser igual a embed_size
         self.fc_out = nn.Linear(heads * self.head_dim, embed_size)
 
     def forward(self, values, keys, query, mask):
-        """ 
-        recebe a query,chaves ,valores e mascara
-        """
-        #primeira coisa e obter o numero de exemplos de treinamento, 
         N = query.shape[0]
-        value_len, key_len, query_len = values.shape[
-            1], keys.shape[
-                1], query.shape[
-                    1]
+        value_len, key_len, query_len = values.shape[1], keys.shape[
+            1], query.shape[1]
 
-        # split embedding into self.heads pieces
+        # >>> split embedding into self.heads pieces
+        # >>> reorganiza as entradas para separar o numero de cabeças(heads)
         values = values.reshape(N, value_len, self.heads, self.head_dim)
         keys = keys.reshape(N, key_len, self.heads, self.head_dim)
         queries = query.reshape(N, query_len, self.heads, self.head_dim)
@@ -132,15 +111,18 @@ requer o tamanho da incorporação `embed_size` e também as cabeças
         values = self.values(values)
         keys = self.keys(keys)
         queries = self.queries(queries)
-
+        # >>> multiplicação de tenores: einsum calcula a energia entre as
+        # >>> consultas e chaves.
         energy = torch.einsum("nqhd,nkhd->nhqk", [queries, keys])
         # queries shape(N, query_len, heads, heads_dim)
         # keys shape(N, key_len, heads, heads_dim)
         # energy shape(N,  heads, heads_dim, key_len)
 
+        # >>> se uma mascara e fornecida, ela define certos valores como
+        # >>> negativos, ignorando esses cálculos de atenção
         if mask is not None:
             energy = energy.masked_fill(mask == 0, float('-1e20'))
-
+        # >>> softmax: Normaliza as pontuações para obter pesos de atenção
         #                                     embed_size =256 / 0.5
         attention = torch.softmax(energy / (self.embed_size ** (1 / 2)), dim=3)
         # print(attention.shape)
@@ -153,19 +135,32 @@ requer o tamanho da incorporação `embed_size` e também as cabeças
         # attention shape: (N, heads, query_len, key_len)
         # values shape: (N, value_len, heads, heads_dim)
     # after shape: (N, value_len, heads, heads_dim) then flatten last two di
+
         out = self.fc_out(out)
+        # >>> a atenção e multiplicada pelos valores e depois concatenada em um
+        # >>> tensor final, que e processado pela camada final `fc_out`
+  
         return out
 
 
 class TransFormerBlock(Module):
+    """
+    .. `Bloco Transformer` ::
+    implementa uma cama do `Transformer`, consistindo de atenção,
+    normalização e um feed-forward network.
 
+    Args:
+        Module (_type_): _description_
+    """
     def __init__(self, embed_size, heads, dropout, forward_expansion):
 
         super(TransFormerBlock, self).__init__()
         self.attention = SelfAttention(embed_size, heads)
+        # >>> Normaliza as saidas para estabilidade
         self.norm1 = nn.LayerNorm(embed_size)
         self.norm2 = nn.LayerNorm(embed_size)
-
+        # >>> uma rede neural densa aplicada apos a atencao para
+        # >>> processamento adicional
         self.feed_forward = nn.Sequential(
             nn.Linear(embed_size, forward_expansion * embed_size),
             nn.ReLU(),
@@ -183,6 +178,20 @@ class TransFormerBlock(Module):
 
 
 class Encoder(Module):
+    """
+:CODIFICADOR( ENCODER):
+converte as sequencias de entrada em embeddings,
+add informações de posição e aplica varias camadas Transformer.
+
+:EMBEDDING: 
+Associa palavras e posições em vetores de alta dimensão.
+
+:CAMADAS:
+aplicação repetida de bloco Transformer para maior processamento
+
+    Args:
+        Module (_type_): _description_
+    """
     def __init__(
             self,
             src_vocab_size,
@@ -228,6 +237,14 @@ class Encoder(Module):
 
 
 class DecoderBlock(Module):
+    """
+    :BLOCO DECODIFICADOR:
+    implementa um bloco do decodificador, que também usa a atenção e camadas 
+    Transformers para gerar a sequencia de saida
+
+    Args:
+        Module (_type_): _description_
+    """
     def __init__(self, embed_size, heads, forward_expansion, dropout, device):
         super(DecoderBlock, self).__init__()
         self.attention = SelfAttention(embed_size, heads)
@@ -245,6 +262,18 @@ class DecoderBlock(Module):
 
 
 class Decoder(Module):
+    """
+    :DECODIFICADOR: 
+    similar ao `ENCODER`, mas processa a sequencia de destino (target) para
+    gerar a Saida prevista.
+
+    :CAMADA FINAL (fc_out):
+    a Saida do decodificador r transformada em previsões de probabilidade para
+    cada palavra no vocabulário.
+
+    Args:
+        Module (_type_): _description_
+    """
     def __init__(self,
                  trg_vocab_size,
                  embed_size,
@@ -284,19 +313,25 @@ class Decoder(Module):
 
 
 class Transformer(Module):
+    """
+    :MODELO TRANSFORMER: junta o codificador (`encoder`) e o
+    decodificador (`decoder`)
+
+    Args:
+        Module (_type_): _description_
+    """
     def __init__(self,
                  src_vocab_size,
                  trg_vocab_size,
                  src_pad_idx,
                  trg_pad_idx,
                  embed_size=256,
-                 # Dimensão do modelo
-                 # embed_size (int): representa o tamanho da entrada do user.
+                 # embed_size (int, optional): representa o tamanho da
+                 # entrada do user.
                  # Defaults to 256.
                  num_layers=6,
                  forward_expansion=4,
                  heads=8,
-                 # Número de "heads" de atenção
                  dropout=0,
                  device="cpu",  # 'cuda'
                  max_length=100
@@ -362,10 +397,7 @@ if __name__ == "__main__":  # ("cuda" if torch.cuda.is_available() else "cpu")
     trg_vocab_size = 10
 
     modal = Transformer(
-        src_vocab_size,
-        trg_vocab_size,
-        src_pad_idx,
-        trg_pad_idx).to(
+        src_vocab_size, trg_vocab_size, src_pad_idx, trg_pad_idx).to(
         device
     )
     out = modal(x, trg[:, :-1])
