@@ -92,16 +92,22 @@ Attributes:
         self.embed_size = embed_size
         self.heads = heads
         self.head_dim = embed_size // heads
-
+        # afirmar 
         assert (self.head_dim * heads ==
                 embed_size), "Embed size neds  to be div by heats"
-
+        # O tamanho do embed precisa ser dividido pelos heats 
+       # pega a dimencao do head vsi mapealo para a dimencao  head  bias como false
         self.values = nn.Linear(self.head_dim, self.head_dim, bias=False)
         self.keys = nn.Linear(self.head_dim, self.head_dim, bias=False)
         self.queries = nn.Linear(self.head_dim, self.head_dim, bias=False)
+        # heads * head_dim tem que ser igual a embed_size
         self.fc_out = nn.Linear(heads * self.head_dim, embed_size)
 
     def forward(self, values, keys, query, mask):
+        """ 
+        recebe a query,chaves ,valores e mascara
+        """
+        #primeira coisa e obter o numero de exemplos de treinamento, 
         N = query.shape[0]
         value_len, key_len, query_len = values.shape[1], keys.shape[1], query.shape[1]
 
