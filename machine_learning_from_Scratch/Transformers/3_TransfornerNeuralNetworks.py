@@ -415,3 +415,45 @@ if __name__ == "__main__":  # ("cuda" if torch.cuda.is_available() else "cpu")
     src_vocab_size = len(src_vocab) + 1
     trg_vocab_size = len(trg_vocab) + 1
 
+
+
+
+import torch
+
+# Vocabulário simples para simular o processo
+src_vocab = {"i": 1, "want": 2, "to": 3, "learn": 4, "english": 5, "how": 6, "are": 7, "you": 8, "doing": 9}
+trg_vocab = {"eu": 1, "quero": 2, "aprender": 3, "português": 4, "como": 5, "você": 6, "está": 7, "fazendo": 8}
+
+src_vocab_size = len(src_vocab) + 1  # +1 para token de padding
+trg_vocab_size = len(trg_vocab) + 1
+
+# Mapeamento inverso do vocabulário para obter as palavras de volta a partir dos índices
+index_to_word_trg = {v: k for k, v in trg_vocab.items()}
+
+# Função para converter texto em tensores de índices
+def text_to_tensor(text, vocab):
+    return torch.tensor([[vocab[word] for word in text.split()]])
+
+# Função para converter tensores de saída em texto
+def tensor_to_text(tensor, index_to_word):
+    return " ".join([index_to_word[idx.item()] for idx in tensor])
+
+# Modelo Transformer criado anteriormente
+modal = Transformer(src_vocab_size, trg_vocab_size, src_pad_idx=0, trg_pad_idx=0).to('cpu')
+
+# Texto para traduzir do inglês para o português
+english_text = "i want to learn english"
+src_tensor = text_to_tensor(english_text, src_vocab)
+
+# Simula uma tradução (sem treinar de fato o modelo, apenas para fins de demonstração)
+output_tensor = modal(src_tensor, src_tensor)  # Tradução fictícia
+
+# Para a demo, vamos simular a saída do modelo
+output_tensor = torch.tensor([[1, 2, 3, 4]])  # Simulando que o modelo retornou a tradução "eu quero aprender português"
+
+# Converte a saída do modelo para texto
+translated_text = tensor_to_text(output_tensor[0], index_to_word_trg)
+
+# Exibe a tradução
+print(f"Texto em inglês: {english_text}")
+print(f"Tradução em português: {translated_text}")
