@@ -1,4 +1,4 @@
-import Transforner_neural_networks  # noqa: F401
+import machine_learning_from_Scratch.Transformers.v.Transforner_neural_networks as Transforner_neural_networks  # noqa: F401
 import numpy as np
 
 
